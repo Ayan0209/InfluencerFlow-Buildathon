@@ -1,0 +1,19 @@
+# Influencer Collaboration Contract
+
+**Brand:** {{ brand_name }}
+**Creator:** {{ creator_name }}
+
+## Deliverables
+{% for item in deliverables %}- {{ item }}
+{% endfor %}
+
+## Rates
+{% for key, value in rates.items() %}- **{{ key }}:** {{ value }}
+{% endfor %}
+
+## Timelines
+{% for key, value in timelines.items() %}- **{{ key }}:** {{ value }}
+{% endfor %}
+
+---
+*This contract is generated for collaboration purposes. Please review and sign as appropriate.* 
