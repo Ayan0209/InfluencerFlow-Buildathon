@@ -6,8 +6,9 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Set the OpenAI API key
+OPENAI_API_KEY = ""
+openai.api_key = OPENAI_API_KEY
 
 def generate_synthetic_data(schema: dict, entity_type: str = "influencer", n: int = 1, batch_size: int = 10, output_file: str = "synthetic_influencers_2.json"):
     batches = n // batch_size + (1 if n % batch_size else 0)
@@ -74,9 +75,9 @@ if __name__ == "__main__":
 
 
     ######## Entity Type Configuration ########
-    entity_type = "business"  # Change this to "influencer", "campaign", etc. as needed
+    entity_type = "campaign"  # Change this to "influencer", "campaign", etc. as needed
 
-    with open(f"schema/{entity_type}.json") as f:
+    with open(f"data/schema/{entity_type}.json") as f:
         schema = json.load(f)
     generate_synthetic_data(schema, entity_type, n=5, batch_size=2, output_file=f"synthetic_{entity_type}.json")
     print(f"Generated and appended entries to synthetic_{entity_type}.json")
