@@ -1,0 +1,29 @@
+{
+  "id": "UUID",
+  "title": "String",
+  "description": "String",
+  "business_id": "UUID",
+  "influencer_ids": ["UUID"],
+  "campaign_type": "String",
+  "deliverables": ["String"],
+  "budget": "Float",
+  "payment_status": "String",
+  "proposed_dates": {
+    "start_date": "Date",
+    "end_date": "Date"
+  },
+  "status": "String",
+  "platform_targets": ["String"],
+  "categories": ["String"],
+  "metrics": {
+    "impressions": "Integer",
+    "likes": "Integer",
+    "comments": "Integer",
+    "shares": "Integer",
+    "link_clicks": "Integer",
+    "reach": "Integer"
+  },
+  "content_links": ["String"],
+  "created_at": "Timestamp",
+  "updated_at": "Timestamp"
+}

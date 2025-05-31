@@ -46,3 +46,7 @@ backend/.env
 # typescript
 /frontend/*.tsbuildinfo
 /frontend/next-env.d.ts
+
+
+*.pyc
+*.env

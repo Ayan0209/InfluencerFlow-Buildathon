@@ -1,0 +1,134 @@
+[
+{
+  "id": "b2f1c0d2-4d3a-4e0c-b5c6-e5c4b7a9f4f2",
+  "name": "GreenTech Innovations",
+  "email": "info@greentech.com",
+  "phone": "+14155552671",
+  "password_hash": "5f4dcc3b5aa765d61d8327deb882cf99",
+  "description": "Leading provider of sustainable tech solutions.",
+  "website_url": "https://www.greentech.com",
+  "location": {
+    "address": "123 Eco Drive",
+    "city": "San Francisco",
+    "state": "CA",
+    "country": "USA"
+  },
+  "industry": "Technology",
+  "social_media_links": {
+    "instagram": "https://www.instagram.com/greentech",
+    "facebook": "https://www.facebook.com/greentech",
+    "twitter": "https://www.twitter.com/greentech"
+  },
+  "past_campaigns": [
+    "e127f1d2-3a3a-4e2c-b1c6-e2c3b7a8f2a1",
+    "d238f0d1-4b3b-4e1d-a2d5-f3d4a8b9f3e2"
+  ],
+  "created_at": "2023-01-15T09:21:34Z",
+  "updated_at": "2023-09-20T14:45:22Z"
+},
+{
+  "id": "d3a2b0e1-5c2b-4f1d-a9e7-f6d5c8b8d5a3",
+  "name": "Epicurean Delights",
+  "email": "contact@epicureandelights.com",
+  "phone": "+442071838750",
+  "password_hash": "7c6a180b36896a0a8c02787eeafb0e4c",
+  "description": "Gourmet food supplier specializing in organic products.",
+  "website_url": "https://www.epicureandelights.com",
+  "location": {
+    "address": "45 Savour Lane",
+    "city": "London",
+    "state": "London",
+    "country": "UK"
+  },
+  "industry": "Food & Beverage",
+  "social_media_links": {
+    "instagram": "https://www.instagram.com/epicureandelights",
+    "facebook": "https://www.facebook.com/epicureandelights",
+    "twitter": "https://www.twitter.com/epicureandelight"
+  },
+  "past_campaigns": [
+    "f4d5e6f7-8a9b-0c1d-e2f3-g4h5i6j7k8l9",
+    "g5h6i7j8-9a0b-1c2d-f3e4-h5i6j7k8l9m0"
+  ],
+  "created_at": "2022-11-02T11:35:47Z",
+  "updated_at": "2023-07-18T17:30:55Z"
+},
+{
+  "id": "5d2b5d36-8f50-4b3b-a4b7-1d2c8e9f0f77",
+  "name": "Tech Innovators Inc.",
+  "email": "contact@techinnovators.com",
+  "phone": "+14155552671",
+  "password_hash": "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "description": "Leading the charge in cutting-edge technology solutions.",
+  "website_url": "https://www.techinnovators.com",
+  "location": {
+    "address": "123 Innovation Drive",
+    "city": "San Francisco",
+    "state": "CA",
+    "country": "USA"
+  },
+  "industry": "Technology",
+  "social_media_links": {
+    "instagram": "https://www.instagram.com/techinnovators",
+    "facebook": "https://www.facebook.com/techinnovators",
+    "twitter": "https://www.twitter.com/techinnovators"
+  },
+  "past_campaigns": [
+    "a3c1e4c6-1f77-4d9d-b8d8-2c3f5b8e9139"
+  ],
+  "created_at": "2023-03-15T12:30:00Z",
+  "updated_at": "2023-09-10T08:45:00Z"
+},
+{
+  "id": "b8f8effb-2e32-46b3-9f1a-ff5f0b0c5f5f",
+  "name": "Gourmet Eats",
+  "email": "hello@gourmeteats.com",
+  "phone": "+442071838750",
+  "password_hash": "b1b3773a05c0ed0176787a4f1574ff0075f7521e",
+  "description": "Delivering exquisite culinary experiences worldwide.",
+  "website_url": "https://www.gourmeteats.com",
+  "location": {
+    "address": "45 Culinary Lane",
+    "city": "London",
+    "state": "London",
+    "country": "UK"
+  },
+  "industry": "Food & Beverage",
+  "social_media_links": {
+    "instagram": "https://www.instagram.com/gourmeteats",
+    "facebook": "https://www.facebook.com/gourmeteats",
+    "twitter": "https://www.twitter.com/gourmeteats"
+  },
+  "past_campaigns": [
+    "c4d2e4b5-3f67-4e8f-a1e9-1d2f3b8e9f1b"
+  ],
+  "created_at": "2022-06-20T09:15:00Z",
+  "updated_at": "2023-10-01T14:20:00Z"
+},
+{
+  "id": "1c8f6a2b-3d5b-4f5e-b8d6-0f02e6c18f9a",
+  "name": "Tech Innovators Inc.",
+  "email": "contact@techinnovators.com",
+  "phone": "+15551234567",
+  "password_hash": "e10adc3949ba59abbe56e057f20f883e",
+  "description": "Leading the way in cutting-edge technology solutions and software development.",
+  "website_url": "https://www.techinnovators.com",
+  "location": {
+    "address": "1234 Silicon Ave",
+    "city": "San Francisco",
+    "state": "CA",
+    "country": "USA"
+  },
+  "industry": "Technology",
+  "social_media_links": {
+    "instagram": "https://www.instagram.com/techinnovators",
+    "facebook": "https://www.facebook.com/techinnovators",
+    "twitter": "https://www.twitter.com/techinnovators"
+  },
+  "past_campaigns": [
+    "3a9f6e2b-7a5b-4e5e-c8d6-1f03e6d18f7b"
+  ],
+  "created_at": "2023-01-15T08:00:00Z",
+  "updated_at": "2023-09-20T10:30:00Z"
+}
+]

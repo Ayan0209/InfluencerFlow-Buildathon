@@ -1,0 +1,41 @@
+{
+  "id": "UUID",
+  "name": "String",
+  "username": "String",
+  "email": "String",
+  "phone": "String",
+  "password_hash": "String",
+  "bio": "String",
+  "profile_picture_url": "String",
+  "location": {
+    "city": "String",
+    "state": "String",
+    "country": "String"
+  },
+  "social_media": {
+    "instagram": {
+      "handle": "String",
+      "followers": "Integer",
+      "engagement_rate": "Float",
+      "url": "String"
+    },
+    "youtube": {
+      "handle": "String",
+      "subscribers": "Integer",
+      "avg_views": "Integer",
+      "url": "String"
+    },
+    "tiktok": {
+      "handle": "String",
+      "followers": "Integer",
+      "engagement_rate": "Float",
+      "url": "String"
+    }
+  },
+  "categories": ["String"],
+  "rate_per_post": "Float",
+  "availability": "String",
+  "collaborations": ["UUID"],
+  "created_at": "Timestamp",
+  "updated_at": "Timestamp"
+}
