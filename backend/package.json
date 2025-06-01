@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@types/next": "^8.0.7",
+    "@types/node": "^22.15.29"
+  },
+  "dependencies": {
+    "next": "^15.3.3"
+  }
+}

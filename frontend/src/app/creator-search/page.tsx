@@ -5,11 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { CreatorCard } from "@/components/CreatorCard";
 
 interface Creator {
-  id: number;
+  id: string;
   name: string;
-  niche: string;
-  followers: number;
-  platform: string;
+  bio?: string;
+  categories?: string[];
+  profile_picture_url?: string;
+  // add any other real fields here
 }
 
 interface ApiResponse {
@@ -61,21 +62,13 @@ export default function CreatorSearchPage() {
           <div className="grid gap-4">
             {data.creators.map((creator) => (
               <CreatorCard key={creator.id} creator={creator} />
-              // <div
-              //   key={creator.id}
-              //   className="p-4 border rounded shadow-sm bg-white"
-              // >
-              //   <div className="font-semibold text-lg">{creator.name}</div>
-              //   <div className="text-sm text-gray-600">{creator.platform} &mdash; {creator.niche}</div>
-              //   <div className="text-sm">Followers: {creator.followers.toLocaleString()}</div>
-              // </div>
             ))}
           </div>
         </>
       )}
     </div>
   );
-} 
+}
 
 
 

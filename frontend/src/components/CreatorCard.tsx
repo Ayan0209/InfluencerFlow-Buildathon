@@ -1,29 +1,35 @@
-import * as React from "react";
+import React from "react";
 
-export interface Creator {
-  id: number;
+interface Creator {
+  id: string;
   name: string;
-  platform: string;
-  followers: number;
-  niche: string;
-  language?: string;
+  bio?: string;
+  categories?: string[];
+  profile_picture_url?: string;
+  // add any other real fields here
 }
 
-interface CreatorCardProps {
-  creator: Creator;
-}
-
-export function CreatorCard({ creator }: CreatorCardProps) {
-  return (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
-      <div className="font-semibold text-lg mb-1">{creator.name}</div>
-      <div className="text-sm text-muted-foreground mb-1">
-        {creator.platform} &mdash; {creator.niche}
-      </div>
-      <div className="text-sm mb-1">Followers: {creator.followers.toLocaleString()}</div>
-      {creator.language && (
-        <div className="text-sm text-gray-500">Language: {creator.language}</div>
+export const CreatorCard = ({ creator }: { creator: Creator }) => (
+  <div className="p-4 border rounded shadow-sm bg-white flex gap-4 items-start">
+    {creator.profile_picture_url && (
+      <img
+        src={creator.profile_picture_url}
+        alt={creator.name}
+        className="w-16 h-16 object-cover rounded-full"
+      />
+    )}
+    <div>
+      <div className="font-semibold text-lg">{creator.name}</div>
+      {creator.bio && (
+        <div className="mt-2 text-sm text-gray-800">
+          <strong>Bio:</strong> {creator.bio}
+        </div>
+      )}
+      {creator.categories && creator.categories.length > 0 && (
+        <div className="mt-2 text-sm text-gray-800">
+          <strong>Categories:</strong> {creator.categories.join(", ")}
+        </div>
       )}
     </div>
-  );
-} 
+  </div>
+);

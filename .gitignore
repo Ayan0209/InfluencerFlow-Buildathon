@@ -2,6 +2,15 @@
 # Backend ignore rules
 # ─────────────────────────────────────────────────────────
 backend/.env
+backend/node_modules
+backend/dist
+backend/.DS_Store
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+backend/.pnpm-debug.log*
+
+node_modules
 
 # ─────────────────────────────────────────────────────────
 # Frontend (Next.js) ignore rules (migrated from frontend/.gitignore)
@@ -47,6 +56,12 @@ backend/.env
 /frontend/*.tsbuildinfo
 /frontend/next-env.d.ts
 
-
+# Python
 *.pyc
+
+# Root-level env and lock files
 *.env
+*.env.*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
