@@ -1,324 +1,383 @@
+// frontend/src/app/discover/page.tsx
 "use client";
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { CreatorCard } from "@/components/CreatorCard";
-// import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-// import { Checkbox } from "@/components/ui/checkbox";
-// import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
-// import { Spinner } from "@/components/ui/spinner";
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-const categoriesList = [
-  "Fashion",
-  "Tech",
-  "Fitness",
-  "Travel",
-  "Beauty",
-  "Food",
-  "Lifestyle",
-  "Gaming",
-  "Education",
-];
-
-const platforms = ["instagram", "youtube", "tiktok"];
-
-const mockInfluencers = [
-  {
-    id: 1,
-    name: "Jane Doe",
-    platform: "Instagram",
-    followers: 120000,
-    niche: "Fashion",
-    language: "English",
-  },
-  {
-    id: 2,
-    name: "John Smith",
-    platform: "TikTok",
-    followers: 90000,
-    niche: "Tech",
-    language: "English",
-  },
-];
-
-const mockCampaigns = [
-  { id: 1, title: "Spring Launch" },
-  { id: 2, title: "Summer Promo" },
-];
-
-function Spinner() {
-  return <div className="animate-spin w-8 h-8 border-4 border-gray-300 border-t-primary rounded-full mx-auto my-8" />;
-}
-
-function Checkbox({ checked, onChange, id, children }: any) {
-  return (
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input type="checkbox" checked={checked} onChange={onChange} id={id} className="accent-primary" />
-      {children}
-    </label>
-  );
-}
-
-function Dialog({ open, onClose, children }: any) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg p-6 min-w-[300px] shadow-lg relative">
-        <button className="absolute top-2 right-2 text-gray-400" onClick={onClose}>&times;</button>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function inviteToCampaign(influencerId: number, campaignId: number) {
-  // Placeholder for invite logic
-  // eslint-disable-next-line no-console
-  console.log("Invite", influencerId, "to campaign", campaignId);
+interface Influencer {
+  id: string;
+  name: string;
+  username: string;
+  profile_picture_url: string | null;
+  location: any;
+  social_media: any;
+  categories: string[] | null;
+  rate_per_post: number | null;
+  availability: string | null;
 }
 
 export default function DiscoverPage() {
-  const [filters, setFilters] = useState({
+  const router = useRouter();
+  const [filters, setFilters] = useState<{
+    search: string;
+    categories: string[];
+    city: string;
+    state: string;
+    country: string;
+    platforms: string[];
+    followersMin: number | "";
+    followersMax: number | "";
+    engagementMin: number | "";
+    engagementMax: number | "";
+    rateMin: number | "";
+    rateMax: number | "";
+    availability: string;
+  }>({
     search: "",
-    categories: [] as string[],
+    categories: [],
     city: "",
     state: "",
     country: "",
-    platforms: [] as string[],
+    platforms: [],
     followersMin: "",
     followersMax: "",
     engagementMin: "",
     engagementMax: "",
     rateMin: "",
     rateMax: "",
-    availability: [] as string[],
+    availability: "",
   });
+  const [results, setResults] = useState<Influencer[]>([]);
   const [loading, setLoading] = useState(false);
-  const [inviteDialog, setInviteDialog] = useState<{ open: boolean; influencerId?: number }>({ open: false });
-  const [selectedCampaign, setSelectedCampaign] = useState<number | null>(null);
 
-  // Simulate data fetch
-  const influencers = mockInfluencers;
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  }
 
-  function handleFilterChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value, type, checked } = e.target;
-    if (type === "checkbox") {
-      setFilters(prev => ({
-        ...prev,
-        [name as keyof typeof prev]: checked
-          ? [...(prev[name as keyof typeof prev] as string[]), value]
-          : (prev[name as keyof typeof prev] as string[]).filter((v: string) => v !== value),
-      }));
-    } else {
-      setFilters(prev => ({ ...prev, [name]: value }));
+  function toggleArrayField(key: keyof typeof filters, value: string) {
+    setFilters((prev) => {
+      const arr = prev[key] as unknown as string[];
+      const next = arr.includes(value)
+        ? arr.filter((s) => s !== value)
+        : [...arr, value];
+      return { ...prev, [key]: next } as any;
+    });
+  }
+
+  async function applyFilters() {
+    setLoading(true);
+    const body = {
+      search: filters.search || null,
+      categories: filters.categories.length ? filters.categories : null,
+      city: filters.city || null,
+      state: filters.state || null,
+      country: filters.country || null,
+      platforms: filters.platforms.length ? filters.platforms : null,
+      followersMin:
+        filters.followersMin !== "" ? filters.followersMin : undefined,
+      followersMax:
+        filters.followersMax !== "" ? filters.followersMax : undefined,
+      engagementMin:
+        filters.engagementMin !== "" ? filters.engagementMin : undefined,
+      engagementMax:
+        filters.engagementMax !== "" ? filters.engagementMax : undefined,
+      rateMin: filters.rateMin !== "" ? filters.rateMin : undefined,
+      rateMax: filters.rateMax !== "" ? filters.rateMax : undefined,
+      availability: filters.availability || null,
+    };
+    const res = await fetch("/api/influencers-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    setLoading(false);
+    if (!res.ok) {
+      alert("Error fetching influencers: " + json.error);
+      return;
     }
-  }
-
-  function handleCategoryChange(cat: string, checked: boolean) {
-    setFilters(prev => ({
-      ...prev,
-      categories: checked ? [...prev.categories, cat] : prev.categories.filter(c => c !== cat),
-    }));
-  }
-
-  function handlePlatformChange(platform: string, checked: boolean) {
-    setFilters(prev => ({
-      ...prev,
-      platforms: checked ? [...prev.platforms, platform] : prev.platforms.filter(p => p !== platform),
-    }));
-  }
-
-  function handleAvailabilityChange(status: string, checked: boolean) {
-    setFilters(prev => ({
-      ...prev,
-      availability: checked ? [...prev.availability, status] : prev.availability.filter(a => a !== status),
-    }));
-  }
-
-  function handleInvite(influencerId: number) {
-    setInviteDialog({ open: true, influencerId });
-    setSelectedCampaign(null);
-  }
-
-  function handleSendInvite() {
-    if (inviteDialog.influencerId && selectedCampaign) {
-      inviteToCampaign(inviteDialog.influencerId, selectedCampaign);
-      setInviteDialog({ open: false });
-    }
+    setResults(json.influencers);
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6 text-center">Discover Influencers</h1>
-      {/* Accordion for Filters */}
-      <div className="max-w-5xl mx-auto mb-8">
-        <div className="border rounded-lg bg-card">
-          <div className="p-4 border-b">
-            <span className="font-semibold">Filters</span>
+    <div className="p-8 max-w-5xl mx-auto">
+      <h1 className="text-3xl font-semibold mb-6">Discover Influencers</h1>
+
+      {/* Filters */}
+      <div className="bg-gray-50 p-6 rounded-md mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Search */}
+          <div>
+            <Label htmlFor="search">Search by Name or Username</Label>
+            <Input
+              name="search"
+              type="text"
+              id="search"
+              value={filters.search}
+              onChange={handleChange}
+              placeholder="Enter keyword…"
+            />
           </div>
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <Input
-                type="text"
-                placeholder="Search by name or bio…"
-                name="search"
-                value={filters.search}
-                onChange={handleFilterChange}
-              />
-            </div>
-            <div>
-              <Label>Categories</Label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {categoriesList.map(cat => (
+          {/* Categories */}
+          <div>
+            <Label>Categories</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {["Fashion", "Tech", "Fitness", "Travel"].map((cat) => (
+                <label key={cat} className="flex items-center space-x-1">
                   <Checkbox
-                    key={cat}
                     checked={filters.categories.includes(cat)}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCategoryChange(cat, e.target.checked)}
-                    id={`cat-${cat}`}
-                  >
-                    <Label htmlFor={`cat-${cat}`}>{cat}</Label>
-                  </Checkbox>
-                ))}
-              </div>
+                    onCheckedChange={() => toggleArrayField("categories", cat)}
+                  />
+                  <span>{cat}</span>
+                </label>
+              ))}
             </div>
-            <div>
-              <Label>Location</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <Input name="city" placeholder="City" value={filters.city} onChange={handleFilterChange} />
-                <Input name="state" placeholder="State" value={filters.state} onChange={handleFilterChange} />
-                <Input name="country" placeholder="Country" value={filters.country} onChange={handleFilterChange} />
-              </div>
-            </div>
-            <div>
-              <Label>Platform</Label>
-              <div className="flex gap-4 mt-1">
-                {platforms.map(platform => (
+          </div>
+          {/* Location */}
+          <div>
+            <Label htmlFor="city">City</Label>
+            <Input
+              name="city"
+              type="text"
+              id="city"
+              value={filters.city}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="state">State</Label>
+            <Input
+              name="state"
+              type="text"
+              id="state"
+              value={filters.state}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="country">Country</Label>
+            <Input
+              name="country"
+              type="text"
+              id="country"
+              value={filters.country}
+              onChange={handleChange}
+            />
+          </div>
+          {/* Platforms */} 
+          <div>
+            <Label>Platforms</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {["instagram", "youtube", "tiktok"].map((plat) => (
+                <label key={plat} className="flex items-center space-x-1">
                   <Checkbox
-                    key={platform}
-                    checked={filters.platforms.includes(platform)}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePlatformChange(platform, e.target.checked)}
-                    id={`platform-${platform}`}
-                  >
-                    <Label htmlFor={`platform-${platform}`}>{platform.charAt(0).toUpperCase() + platform.slice(1)}</Label>
-                  </Checkbox>
-                ))}
-              </div>
+                    checked={filters.platforms.includes(plat)}
+                    onCheckedChange={() => toggleArrayField("platforms", plat)}
+                  />
+                  <span className="capitalize">{plat}</span>
+                </label>
+              ))}
             </div>
-            <div>
-              <Label>Followers</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="Min"
-                  name="followersMin"
-                  value={filters.followersMin}
-                  onChange={handleFilterChange}
-                />
-                <Input
-                  type="number"
-                  placeholder="Max"
-                  name="followersMax"
-                  value={filters.followersMax}
-                  onChange={handleFilterChange}
-                />
-              </div>
+          </div>
+          {/* Followers Range */}
+          <div>
+            <Label>Followers Min</Label>
+            <Input
+              name="followersMin"
+              type="number"
+              value={filters.followersMin}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  followersMin: e.target.value === "" ? "" : parseInt(e.target.value),
+                }))
+              }
+            />
+          </div>
+          <div>
+            <Label>Followers Max</Label>
+            <Input
+              name="followersMax"
+              type="number"
+              value={filters.followersMax}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  followersMax: e.target.value === "" ? "" : parseInt(e.target.value),
+                }))
+              }
+            />
+          </div>
+          {/* Engagement Range */}
+          <div>
+            <Label>Engagement Min (%)</Label>
+            <Input
+              name="engagementMin"
+              type="number"
+              step="0.1"
+              value={filters.engagementMin}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  engagementMin: e.target.value === "" ? "" : parseFloat(e.target.value),
+                }))
+              }
+            />
+          </div>
+          <div>
+            <Label>Engagement Max (%)</Label>
+            <Input
+              name="engagementMax"
+              type="number"
+              step="0.1"
+              value={filters.engagementMax}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  engagementMax: e.target.value === "" ? "" : parseFloat(e.target.value),
+                }))
+              }
+            />
+          </div>
+          {/* Rate Range */}
+          <div>
+            <Label>Rate Min (₹)</Label>
+            <Input
+              name="rateMin"
+              type="number"
+              value={filters.rateMin}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  rateMin: e.target.value === "" ? "" : parseFloat(e.target.value),
+                }))
+              }
+            />
+          </div>
+          <div>
+            <Label>Rate Max (₹)</Label>
+            <Input
+              name="rateMax"
+              type="number"
+              value={filters.rateMax}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  rateMax: e.target.value === "" ? "" : parseFloat(e.target.value),
+                }))
+              }
+            />
+          </div>
+          {/* Availability */}
+          <div>
+            <Label>Availability</Label>
+            <div className="flex items-center space-x-2 mt-2">
+              {["Available", "Busy"].map((status) => (
+                <label key={status} className="flex items-center space-x-1">
+                  <Checkbox
+                    checked={filters.availability === status}
+                    onCheckedChange={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        availability: prev.availability === status ? "" : status,
+                      }))
+                    }
+                  />
+                  <span>{status}</span>
+                </label>
+              ))}
             </div>
-            <div>
-              <Label>Engagement %</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  step="0.1"
-                  placeholder="Min"
-                  name="engagementMin"
-                  value={filters.engagementMin}
-                  onChange={handleFilterChange}
-                />
-                <Input
-                  type="number"
-                  placeholder="Max"
-                  name="engagementMax"
-                  value={filters.engagementMax}
-                  onChange={handleFilterChange}
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Rate (₹)</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="Min"
-                  name="rateMin"
-                  value={filters.rateMin}
-                  onChange={handleFilterChange}
-                />
-                <Input
-                  type="number"
-                  placeholder="Max"
-                  name="rateMax"
-                  value={filters.rateMax}
-                  onChange={handleFilterChange}
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Availability</Label>
-              <div className="flex gap-4 mt-1">
-                <Checkbox
-                  checked={filters.availability.includes("Available")}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAvailabilityChange("Available", e.target.checked)}
-                  id="avail-available"
-                >
-                  <Label htmlFor="avail-available">Available</Label>
-                </Checkbox>
-                <Checkbox
-                  checked={filters.availability.includes("Busy")}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAvailabilityChange("Busy", e.target.checked)}
-                  id="avail-busy"
-                >
-                  <Label htmlFor="avail-busy">Busy</Label>
-                </Checkbox>
-              </div>
-            </div>
+          </div>
+          {/* Apply Filters Button */}
+          <div className="col-span-1 sm:col-span-2 text-right">
+            <Button onClick={() => applyFilters()} disabled={loading}>
+              {loading ? "Searching…" : "Apply Filters"}
+            </Button>
           </div>
         </div>
       </div>
-      {/* Loading Spinner */}
-      {loading ? (
-        <Spinner />
+
+      {/* Results Grid */}
+      {results.length === 0 ? (
+        <div>No influencers match your criteria.</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-8">
-          {influencers.map(influencer => (
-            <div key={influencer.id} className="relative">
-              <CreatorCard creator={influencer} />
-              <Button className="absolute top-4 right-4" size="sm" onClick={() => handleInvite(influencer.id)}>
-                Invite
-              </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {results.map((inf) => (
+            <div
+              key={inf.id}
+              className="p-4 border rounded-md bg-white flex flex-col"
+            >
+              <div className="mb-4 flex items-center space-x-3">
+                {inf.profile_picture_url ? (
+                  <Image
+                    src={inf.profile_picture_url}
+                    alt={inf.name}
+                    width={60}
+                    height={60}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="w-14 h-14 bg-gray-200 rounded-full" />
+                )}
+                <div>
+                  <h3 className="font-semibold">{inf.name}</h3>
+                  <p className="text-sm text-gray-500">@{inf.username}</p>
+                </div>
+              </div>
+              <div className="mb-2">
+                {inf.categories?.map((cat) => (
+                  <Badge key={cat} className="mr-1">
+                    {cat}
+                  </Badge>
+                )) || <span className="text-gray-500">No categories</span>}
+              </div>
+              <div className="mb-2 text-sm">
+                Location:{" "}
+                {inf.location
+                  ? `${inf.location.city}, ${inf.location.state}, ${inf.location.country}`
+                  : "N/A"}
+              </div>
+              <div className="mb-2 text-sm">
+                Rate per post: ₹{inf.rate_per_post || "N/A"}
+              </div>
+              <div className="mb-4 text-sm">
+                Availability: {inf.availability || "N/A"}
+              </div>
+              <div className="mt-auto">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>Invite</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <h2 className="text-xl font-semibold mb-4">
+                      Invite {inf.name} to Campaign
+                    </h2>
+                    {/* Here you would embed a dropdown of this business’s campaigns */}
+                    {/* For MVP, just show a stub */}
+                    <p>Campaign selection not implemented yet.</p>
+                    <Button
+                      className="mt-4"
+                      onClick={() => {
+                        alert(`Invited ${inf.name} (stub)`);
+                      }}
+                    >
+                      Confirm Invite
+                    </Button>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           ))}
         </div>
       )}
-      {/* Invite Dialog */}
-      <Dialog open={inviteDialog.open} onClose={() => setInviteDialog({ open: false })}>
-        <div className="mb-4">
-          <Label htmlFor="campaign-select">Select Campaign</Label>
-          <select
-            id="campaign-select"
-            className="w-full border rounded px-3 py-2 mt-1"
-            value={selectedCampaign ?? ""}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCampaign(Number(e.target.value))}
-          >
-            <option value="" disabled>Select a campaign…</option>
-            {mockCampaigns.map(c => (
-              <option key={c.id} value={c.id}>{c.title}</option>
-            ))}
-          </select>
-        </div>
-        <Button onClick={handleSendInvite} disabled={!selectedCampaign} className="w-full">Send Invite</Button>
-      </Dialog>
     </div>
   );
-} 
+}

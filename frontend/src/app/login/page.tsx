@@ -1,25 +1,44 @@
 "use client";
 
 import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { supabase } from "@/lib/supabase_client";
 
-function handleLogin(role: "business" | "influencer", email: string, password: string) {
-  // Placeholder for login logic
-  // eslint-disable-next-line no-console
-  console.log(`Login as ${role}:`, { email, password });
-}
-
-export function LoginForm({ role }: { role: "business" | "influencer" }) {
+function LoginForm({ role }: { role: "business" | "influencer" }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
   const isDisabled = !email || !password;
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isDisabled) handleLogin(role, email, password);
+    if (isDisabled) return;
+
+    setIsLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      alert(`Login failed: ${error.message}`);
+      return;
+    }
+
+    // Redirect to the appropriate dashboard
+    if (role === "business") {
+      router.push("/dashboard/business");
+    } else {
+      router.push("/dashboard/influencer");
+    }
   }
 
   return (
@@ -32,7 +51,7 @@ export function LoginForm({ role }: { role: "business" | "influencer" }) {
           name="email"
           autoComplete="email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
       </div>
@@ -44,12 +63,12 @@ export function LoginForm({ role }: { role: "business" | "influencer" }) {
           name="password"
           autoComplete="current-password"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
       </div>
-      <Button type="submit" disabled={isDisabled} className="w-full">
-        Login
+      <Button type="submit" disabled={isDisabled || isLoading} className="w-full">
+        {isLoading ? "Logging in…" : "Login"}
       </Button>
     </form>
   );
@@ -72,4 +91,4 @@ export default function LoginPage() {
       </Tabs>
     </div>
   );
-} 
+}

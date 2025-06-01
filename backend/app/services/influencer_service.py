@@ -1,4 +1,4 @@
-from app.config_supabase import supabase
+from app.services.supabase_client import supabase
 
 def get_influencer_by_id(influencer_id: str):
     row = supabase.table("influencer").select("*").eq("id", influencer_id).single().execute()

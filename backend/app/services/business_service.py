@@ -1,4 +1,4 @@
-from app.config_supabase import supabase
+from app.services.supabase_client import supabase
 
 def get_business_by_id(business_id: str):
     row = supabase.table("business").select("*").eq("id", business_id).single().execute()
