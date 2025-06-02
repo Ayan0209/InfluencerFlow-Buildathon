@@ -1,56 +1,37 @@
 # backend/app/routes/contract.py
 
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
-from typing import Dict
+from fastapi import APIRouter, HTTPException, Query, status
+from typing import Optional
 from io import BytesIO
-
 from fastapi.responses import StreamingResponse
-from app.services.contract_service import generate_contract
+from app.services.contract_service import generate_contract_with_terms
 
-router = APIRouter()
-
-
-class ContractRequest(BaseModel):
-    campaign_id: int
-    creator_id: int
-    terms: Dict[str, str]
-    # e.g. {"brand_name": "...", "creator_name": "...", "deliverables": "...", "rate": "...", "timeline": "...", "milestone": "..."}
+router = APIRouter(prefix="/api/contract", tags=["contract"])
 
 
-@router.post(
-    "/contract/generate",
-    summary="Generate a contract",
-    response_description="Returns the rendered contract as a downloadable Markdown file",
-)
-async def create_contract(request: ContractRequest):
+@router.get("/generate", summary="Generate a PDF contract")
+async def generate_contract_endpoint(
+    campaign_id: str = Query(...),
+    influencer_id: Optional[str] = Query(None)
+):
     """
-    Generate a contract based on the provided campaign_id, creator_id, and terms.
-    This endpoint returns a StreamingResponse containing the rendered contract bytes.
+    GET /api/contract/generate?campaign_id={id}&influencer_id={infId}
+    If influencer_id is provided, the service will pull in the finalized terms
+    for that influencer/campaign—and produce a PDF. Otherwise, it may
+    return a generic contract or an error.
     """
     try:
-        # Call your service to get back rendered contract bytes (UTF-8)
-        contract_bytes: bytes = generate_contract(
-            campaign_id=request.campaign_id,
-            creator_id=request.creator_id,
-            terms=request.terms,
-        )
+        pdf_bytes = generate_contract_with_terms(campaign_id, influencer_id)
+        if not pdf_bytes:
+            raise HTTPException(status_code=500, detail="Contract generation failed")
 
-        # Wrap bytes in an in-memory buffer
-        buffer = BytesIO(contract_bytes)
-
-        # Return as a streaming response. Here, we use text/markdown. 
-        # Change media_type to "application/pdf" if you switch to PDF bytes later.
+        buffer = BytesIO(pdf_bytes)
         return StreamingResponse(
             buffer,
-            media_type="text/markdown",
+            media_type="application/pdf",
             headers={
-                "Content-Disposition": "attachment; filename=contract.md"
+                "Content-Disposition": f'attachment; filename="contract_{campaign_id}_{influencer_id}.pdf"'
             },
         )
     except Exception as e:
-        # If anything goes wrong in generate_contract(), return an HTTP 500
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate contract: {e}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))

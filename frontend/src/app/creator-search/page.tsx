@@ -1,82 +1,157 @@
-'use client';
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { CreatorCard } from "@/components/CreatorCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 
-interface Creator {
-  id: number;
-  name: string;
-  niche: string;
-  followers: number;
-  platform: string;
-}
-
-interface ApiResponse {
-  creators: Creator[];
-  gpt_summary: string;
-}
-
-function fetchCreators(prompt: string): Promise<ApiResponse> {
-  return fetch(`/api/creator/search?prompt=${encodeURIComponent(prompt)}`)
-    .then((res) => res.json());
-}
+// 1) New import
+import { fetchRecommendations } from "@/lib/fetchRecommendations";
 
 export default function CreatorSearchPage() {
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get("campaignId") || "";
+  const router = useRouter();
+
   const [prompt, setPrompt] = useState("");
   const [searchPrompt, setSearchPrompt] = useState("");
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["creators", searchPrompt],
-    queryFn: () => fetchCreators(searchPrompt),
+  // React Query to fetch influencers
+  async function fetchInfluencersByPrompt(prompt: string) {
+    const res = await fetch("/api/influencers-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ search: prompt }),
+    });
+    if (!res.ok) throw new Error("Failed to search influencers");
+    return res.json() as Promise<{ influencers: any[] }>;
+  }
+
+  const {
+    data,
+    isLoading: isFetchingInfluencers,
+    isError: errorFetchingInfluencers,
+  } = useQuery({
+    queryKey: ["influencers", searchPrompt],
+    queryFn: () => fetchInfluencersByPrompt(searchPrompt),
     enabled: !!searchPrompt,
   });
 
+  // 2) State to hold GPT’s recommendation text
+  const [recommendationText, setRecommendationText] = useState<string | null>(null);
+  const [isFetchingRecommendation, setIsFetchingRecommendation] = useState(false);
+  const [errorFetchingRecommendation, setErrorFetchingRecommendation] = useState<string | null>(null);
+
+  // 3) useEffect: whenever data.influencers changes, kick off GPT call
+  useEffect(() => {
+    if (data?.influencers && data.influencers.length > 0 && campaignId) {
+      setIsFetchingRecommendation(true);
+      setErrorFetchingRecommendation(null);
+
+      // Call the new API route
+      fetchRecommendations(campaignId, data.influencers)
+        .then((text) => {
+          setRecommendationText(text);
+        })
+        .catch((err) => {
+          console.error("Error fetching recommendation:", err);
+          setErrorFetchingRecommendation("Failed to get GPT recommendation.");
+        })
+        .finally(() => {
+          setIsFetchingRecommendation(false);
+        });
+    }
+  }, [data?.influencers, campaignId]);
+
+  // 4) Invite function (unchanged)
+  const inviteInfluencer = async (influencerId: string) => {
+    if (!campaignId) {
+      alert("No campaign selected to invite to.");
+      return;
+    }
+    const resp = await fetch(`/api/campaign/${campaignId}/invite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ influencer_id: influencerId }),
+    });
+    if (!resp.ok) {
+      alert("Failed to send invite.");
+    } else {
+      alert("Invitation sent!");
+    }
+  };
+
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-6">Creator Search</h1>
-      <div className="flex gap-2 mb-6">
-        <input
+    <div className="max-w-3xl mx-auto py-10 px-4 space-y-6">
+      <h1 className="text-2xl font-bold">Creator Search</h1>
+      <Button
+          variant="secondary"
+          onClick={() => router.push(`/campaign/${campaignId}`)}
+        >
+          Back to Campaign
+        </Button>
+      <div className="flex gap-2">
+        <Input
           type="text"
-          className="input input-bordered flex-1 px-3 py-2 rounded border"
-          placeholder="Enter campaign prompt..."
+          placeholder="Search influencers by name, category…"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
-        <button
-          className="btn btn-primary px-4 py-2 rounded bg-black text-white"
-          onClick={() => setSearchPrompt(prompt)}
-          disabled={!prompt}
-        >
+        <Button disabled={!prompt} onClick={() => setSearchPrompt(prompt)}>
           Search
-        </button>
+        </Button>
       </div>
-      {isLoading && <div>Loading...</div>}
-      {isError && <div className="text-red-500">Error fetching creators.</div>}
-      {data && (
+
+      {campaignId && (
+        <p className="text-sm text-gray-600">
+          Inviting into campaign <strong>{campaignId}</strong>
+        </p>
+      )}
+
+      {isFetchingInfluencers && <div>Loading influencers…</div>}
+      {errorFetchingInfluencers && (
+        <div className="text-red-500">Error loading influencers.</div>
+      )}
+
+      {data && data.influencers && (
         <>
-          <div className="mb-4 p-4 bg-gray-100 rounded">
-            <strong>GPT Summary:</strong> {data.gpt_summary}
-          </div>
           <div className="grid gap-4">
-            {data.creators.map((creator) => (
-              <CreatorCard key={creator.id} creator={creator} />
-              // <div
-              //   key={creator.id}
-              //   className="p-4 border rounded shadow-sm bg-white"
-              // >
-              //   <div className="font-semibold text-lg">{creator.name}</div>
-              //   <div className="text-sm text-gray-600">{creator.platform} &mdash; {creator.niche}</div>
-              //   <div className="text-sm">Followers: {creator.followers.toLocaleString()}</div>
-              // </div>
+            {data.influencers.map((inf: any) => (
+              <div
+                key={inf.id}
+                className="flex items-center justify-between p-4 border rounded shadow-sm bg-white"
+              >
+                <div>
+                  <p className="font-semibold">{inf.name}</p>
+                  <p className="text-sm text-gray-600">
+                    {inf.categories?.join(", ")}
+                  </p>
+                </div>
+                <Button size="sm" onClick={() => inviteInfluencer(inf.id)}>
+                  Invite
+                </Button>
+              </div>
             ))}
+          </div>
+
+          {/* 5) Display the GPT recommendation below the list */}
+          <div className="pt-6">
+            {isFetchingRecommendation && <div>Generating recommendation…</div>}
+            {errorFetchingRecommendation && (
+              <div className="text-red-500">{errorFetchingRecommendation}</div>
+            )}
+            {recommendationText && (
+              <div className="p-4 border rounded bg-gray-50">
+                <h2 className="text-lg font-semibold mb-2">GPT Recommendation</h2>
+                <p>{recommendationText}</p>
+              </div>
+            )}
           </div>
         </>
       )}
     </div>
   );
-} 
-
-
-
-
+}

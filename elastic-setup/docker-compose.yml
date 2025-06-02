@@ -1,0 +1,22 @@
+# docker-compose.yml
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.2
+    container_name: es-local
+    environment:
+      # Enable single-node discovery; no need for a cluster of multiple nodes.
+      - discovery.type=single-node
+
+      # In Elasticsearch 8.x, security is enabled by default. You can override
+      # the built-in `elastic` password by setting ELASTIC_PASSWORD here.
+      # If you leave this out, ES will auto-generate a password that you must fetch from the logs.
+      - ELASTIC_PASSWORD=InfluencerFlow
+
+      # If you want to disable security entirely (NOT recommended except for quick experiments),
+      # you could add:
+      # - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+    

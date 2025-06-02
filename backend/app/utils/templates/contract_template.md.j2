@@ -1,13 +1,109 @@
-# Contract for {{ brand_name }} & {{ creator_name }}
+{{ "=" * 60 }}
+# CONTRACT AGREEMENT
 
-**Deliverables:** {{ deliverables }}
-**Rate:** {{ rate }}
-**Timeline:** {{ timeline }}
+## Between:
+**Brand:** {{ brand_name }}  
+**Email:** {{ brand_email }}{% if brand_phone %}  
+**Phone:** {{ brand_phone }}{% endif %}  
+{% if brand_website %}**Website:** {{ brand_website }}{% endif %}
 
-## Terms & Conditions
-1. Payment upon {{ milestone }}
-2. Content usage rights: …
+**and**
 
-Signature: ____________________
+**Influencer:** {{ creator_name }}{% if creator_username %} (@{{ creator_username }}){% endif %}  
+{% if creator_email %}**Email:** {{ creator_email }}{% endif %}
 
-*This is a sample contract. Please review and sign as appropriate.* 
+Date: **{{ start_date }}**
+
+{{ "=" * 60 }}
+
+---
+
+## 1. Recitals
+
+1.1. **Purpose.** {{ brand_name }} (“Brand”) wishes to engage {{ creator_name }} (“Influencer”) to create content in connection with the marketing and promotion of the Brand’s products or services, on the terms and conditions set forth herein.
+
+1.2. **Term.** The term of this Agreement begins on **{{ start_date }}** and ends on **{{ end_date }}**, unless earlier terminated as provided below.
+
+---
+
+## 2. Scope of Work
+
+2.1. **Deliverables.** Influencer agrees to create the following deliverables (collectively, “Deliverables”):
+
+{{ bullet_deliverables }}
+
+2.2. **Posting Platforms.** Influencer will post the Deliverables on such platforms as Brand and Influencer mutually agree in writing.
+
+2.3. **Content Requirements.**  
+- All content must comply with applicable laws, social media guidelines, and Brand style guidelines.  
+- Influencer shall disclose Brand relationship per FTC guidelines (e.g. using #ad or #sponsored).
+
+---
+
+## 3. Compensation
+
+3.1. **Rate & Payment.** Brand agrees to pay Influencer a fee of **₹{{ "{:,.2f}".format(rate_per_post) }}** (Indian Rupees) upon completion and approval of all Deliverables.
+
+3.2. **Payment Terms.** Payment will be made within thirty (30) days after Brand’s written approval of the final Deliverables. Payment shall be via bank transfer to the account details provided by Influencer.
+
+---
+
+## 4. Rights & Usage
+
+4.1. **License Grant.** Influencer hereby grants Brand an exclusive, worldwide, royalty‑free, perpetual license to use, display, distribute, and sublicense the Deliverables for marketing and promotional purposes.
+
+4.2. **Moral Rights.** Influencer waives any rights of attribution or moral rights in the Deliverables.
+
+---
+
+## 5. Representations & Warranties
+
+5.1. **By Brand.** Brand warrants that it has the right to enter into this Agreement and that Brand’s instructions will comply with all applicable laws.
+
+5.2. **By Influencer.** Influencer warrants that:  
+- The Deliverables will be original and not infringe on any third‑party copyrights, trademarks, or rights of publicity;  
+- Influencer has full right and authority to grant the rights and licenses in this Agreement.
+
+---
+
+## 6. Confidentiality
+
+6.1. **Confidential Information.** Each party agrees not to disclose any proprietary or confidential information obtained from the other party, except as required by law.
+
+---
+
+## 7. Termination
+
+7.1. **For Convenience.** Either party may terminate this Agreement upon ten (10) days’ written notice to the other party.
+
+7.2. **For Cause.** Either party may terminate immediately if the other breaches any material term of this Agreement.
+
+---
+
+## 8. Indemnification
+
+8.1. **By Influencer.** Influencer shall indemnify, defend, and hold harmless Brand from any claims, liabilities, or expenses (including attorneys’ fees) arising out of any third‑party allegation that the Deliverables infringe the rights of a third party.
+
+8.2. **By Brand.** Brand shall indemnify, defend, and hold harmless Influencer from any claims, liabilities, or expenses arising out of Brand’s misuse of the Deliverables.
+
+---
+
+## 9. General Provisions
+
+9.1. **Governing Law.** This Agreement shall be governed by the laws of India, without regard to conflicts of law principles.
+
+9.2. **Entire Agreement.** This document constitutes the entire Agreement between the parties and supersedes all prior negotiations, understandings, or agreements.
+
+9.3. **Amendments.** Any amendment to this Agreement must be in writing and signed by both parties.
+
+9.4. **Severability.** If any provision of this Agreement is held invalid or unenforceable, the remainder of this Agreement shall remain in full force and effect.
+
+---
+
+**IN WITNESS WHEREOF**, the parties have executed this Agreement as of the date first written above:
+
+Brand Signature: ____________________	Date: _____________
+
+Influencer Signature: _______________	Date: _____________
+
+{{ "=" * 60 }}

@@ -1,0 +1,385 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Below is a high‑level breakdown of the entire campaign journey—step by step—mapped to the screens (Next.js pages/components), API routes, and UI components you’ll need (using ShadCN, React Query, Supabase) to glue it all together.
+
+---
+
+## Step 1) Business Invites Influencer
+
+### 1.1 Screen: **Influencer Search**
+
+* **Path**: `/dashboard/business/creators` (or `/creator-search?campaignId={id}`)
+
+* **What it shows**:
+
+  * A grid or list of influencer “cards” (pulled from your existing `/api/influencer/search?query=…`).
+  * Each card shows name, categories, rate\_per\_post, social stats (use ShadCN `<Card>` + `<Avatar>` + `<Badge>`).
+  * A “Invite” button on each card.
+
+* **API calls**:
+
+  * `GET /api/influencer?search={query}` → returns matching influencers (you already have a search endpoint or can add one).
+  * `POST /api/campaign/{campaignId}/invite` with `{ influencer_id }` → creates a `campaign_influencer` row with `status: "Pending"`.
+
+* **React‑Query hooks**:
+
+  * `useQuery(["searchInfluencers", query], fetchSearchResult)`
+  * `useMutation(inviteInfluencer, { onSuccess: refetch search or mark invited })`
+
+* **UI components** (ShadCN):
+
+  * Use `<Input>` for the search field.
+  * Render each influencer in a `<Card>` with `<Avatar>`, `<Badge>` for their categories and rate.
+  * On “Invite” click, disable button and fire the mutation.
+
+---
+
+## Step 2) Business Negotiates with Influencer
+
+> *We’ll simulate negotiation via a basic chat‐style component; you can evolve this into a real AI chat later.*
+
+### 2.1 Screen: **Negotiation Chat Room**
+
+* **Path**: `/dashboard/business/campaigns/{campaignId}/negotiation/{influencerId}`
+
+* **What it shows**:
+
+  * A two‐column layout:
+
+    * **Left**: campaign summary (deliverables, proposed\_dates, business budget).
+    * **Right**: a chat feed between “Business Agent” and “Influencer.”
+  * At the bottom: an `<Input>` + “Send” `<Button>` so Business can type a message.
+  * Each message bubbles with a label (“Business” or “Influencer”) and a timestamp.
+
+* **API routes** (you’ll need to add these):
+
+  1. `GET /api/campaign/{campaignId}/negotiation/{influencerId}`
+
+     * Returns an array of `{ who: "business" | "influencer", message: string, timestamp: string }`.
+     * Stored in a new table `negotiations` (columns: `id`, `campaign_id`, `influencer_id`, `sender_type`, `message`, `created_at`).
+
+  2. `POST /api/campaign/{campaignId}/negotiation/{influencerId}`
+
+     * Body: `{ sender_type: "business"|"influencer", message: string }`
+     * Inserts a new row into `negotiations`.
+
+* **Database addition**:
+
+  ```sql
+  CREATE TABLE public.negotiations (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campaign_id uuid NOT NULL REFERENCES public.campaign(id),
+    influencer_id uuid NOT NULL REFERENCES public.influencer(id),
+    sender_type text NOT NULL,    -- "business" or "influencer"
+    message text NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+  );
+  ```
+
+* **React‑Query hooks**:
+
+  * `useQuery(["negotiation", campaignId, influencerId], fetchNegotiations)`
+  * `useMutation(sendNegotiationMessage, { onSuccess: () => refetch negotiations })`
+
+* **UI (ShadCN)**:
+
+  * Wrap the conversation in a scrollable `<div>` with flex‐column.
+  * Each message is a small `<Card>` or `<div>` with a background color:
+
+    * Business messages on the right (e.g. `bg-blue-50 text-black`),
+    * Influencer messages on the left (`bg-gray-100 text-black`).
+  * Input bar at bottom: `<Input>` plus `<Button> Send` (disabled if empty).
+
+---
+
+## Step 3) Influencer Signs a Contract
+
+### 3.1 Screen (for Influencer): **View & Sign Contract**
+
+* **Path**: `/dashboard/influencer/campaigns/{campaignId}`
+
+* (You already built a version of this; we’ll enhance it with a “Sign” button if `joinRow.status === "Accepted"`.)
+
+* **What it shows**:
+
+  * A `<PDFContractViewer>` embedding the PDF from:
+
+    ```
+    /api/contract/generate?campaign_id={campaignId}&creator_id={influencerId}
+    ```
+  * If `joinRow.status === "Accepted"` (from Step 1 invite → Step 2 negotiation final rate), show:
+
+    ```jsx
+    <Button onClick={signContract} disabled={signing}>
+      {signing ? "Signing…" : "Sign Contract"}
+    </Button>
+    ```
+  * Once signed, `joinRow.status` changes from `"Accepted"` → `"Completed"` (or use a new status `"Signed"`).
+
+* **API routes**:
+
+  1. **Existing**: `GET /api/contract/generate?campaign_id={campaignId}&creator_id={influencerId}`
+
+     * Returns a PDF that includes the “final rate” (pulled from join table’s `rate_per_post`).
+  2. **New**: `POST /api/campaign/{campaignId}/influencers/{influencerId}/sign`
+
+     * Body: none (or optional `{ signed_at: timestamp }`)
+     * Server‐side: update `campaign_influencer` set `status = "Signed"` (or `"Completed"`) and record `signed_at = now()`.
+
+* **React‑Query hooks**:
+
+  * `useQuery(["joinRow", campaignId, influencerId], fetchJoinRow)`
+  * `useMutation(signContractMutation, { onSuccess: () => invalidateQueries(["joinRow", campaignId, influencerId]) })`
+
+* **UI (ShadCN)**:
+
+  * Use your existing `<Card>` layout.
+  * After `<PDFContractViewer>`, conditionally show `<Button variant="primary">Sign Contract</Button>`.
+  * After success, replace button with a green badge:
+
+    ```jsx
+    <Badge variant="success">Contract Signed</Badge>
+    ```
+
+---
+
+## Step 4) Influencer Provides Deliverables and Performance
+
+### 4.1 Screen (for Influencer): **Submit Deliverables**
+
+* **Path**: same `/dashboard/influencer/campaigns/{campaignId}` below the Contract section.
+
+* **What it shows**:
+
+  * A `<Card>` titled “Submit Deliverables.”
+  * For each `type` in `campaign.deliverables` (array), render:
+
+    ```jsx
+    <label>{type}</label>
+    <div className="flex gap-2">
+      <Input
+        type="url"
+        placeholder="Paste post URL or upload screenshot"
+        value={submissions[type]||""}
+        onChange={…}
+      />
+      <Button
+        onClick={() => submitDeliverable(type, submissions[type])}
+        disabled={!submissions[type]?.trim().length || isSubmittingType}
+      >
+        {isSubmittingType ? "Submitting…" : "Submit"}
+      </Button>
+    </div>
+    ```
+  * Once all required deliverables have been submitted, show:
+
+    ```jsx
+    <Button onClick={markComplete} disabled={isMarkingComplete}>
+      {isMarkingComplete ? "Marking Complete…" : "Mark as Complete"}
+    </Button>
+    ```
+  * Below that, an optional “Performance Preview” card showing `performance.views` and `performance.likes`.
+
+* **API routes** (you already set these up):
+
+  1. `POST /api/deliverable`
+
+     * Body: `{ campaign_id, influencer_id, deliverable_type, submission_url }`
+     * Server: upsert into a `deliverables` table, or update `campaign_influencer.deliverables_submitted` JSONB.
+
+     Example service implementation:
+
+     ```ts
+     // services/deliverable_service.ts
+     async function upsertDeliverable({campaign_id, influencer_id, type, url}) {
+       // read existing JSONB from campaign_influencer
+       const resp = await supabase
+         .from("campaign_influencer")
+         .select("deliverables_submitted")
+         .eq("campaign_id", campaign_id)
+         .eq("influencer_id", influencer_id)
+         .single();
+       const existing = resp.data?.deliverables_submitted || {};
+       const updated = { ...existing, [type]: url };
+       await supabase
+         .from("campaign_influencer")
+         .update({ deliverables_submitted: updated })
+         .eq("campaign_id", campaign_id)
+         .eq("influencer_id", influencer_id);
+       return { deliverables_submitted: updated };
+     }
+     ```
+  2. `GET /api/campaign/{campaignId}/influencers/{influencerId}/performance`
+
+     * Server: read from `campaign_influencer.performance` JSONB, or compute from a separate `performance` table.
+  3. `POST /api/influencer/{influencerId}/campaign/{campaignId}/complete`
+
+     * Server: update `campaign_influencer.status = "Completed"`.
+
+* **Database additions** (if not already present):
+
+  ```sql
+  -- Extend campaign_influencer:
+  ALTER TABLE public.campaign_influencer
+    ADD COLUMN deliverables_submitted jsonb DEFAULT '{}',
+    ADD COLUMN payment_status boolean DEFAULT false,
+    ADD COLUMN performance jsonb DEFAULT '{}',
+    ADD COLUMN signed_at timestamp with time zone;
+  ```
+
+* **React‑Query hooks**:
+
+  * `useMutation(submitDeliverableMutation, { onSuccess: () => invalidateQueries(["joinRow", ...]) })`
+  * `useMutation(markCompleteMutation, { onSuccess: () => invalidateQueries(["joinRow", ...]) })`
+
+* **UI (ShadCN)**:
+
+  * Each deliverable row in a `<CardContent>` area.
+  * A final `<Button>` “Mark as Complete” only if `allSubmitted && joinRow.status !== "Completed"`.
+
+---
+
+## Step 5) Business Reviews & Pays Influencer
+
+### 5.1 Screen (for Business): **Campaign Dashboard**
+
+* **Path**: `/dashboard/business/campaigns/{campaignId}`
+
+* **What it shows**:
+
+  * A summary of campaign details (title, budget, deliverables).
+  * A list of invited influencers (with their `invite_status` and `deliverables_submitted`).
+  * For each influencer whose `status === "Completed"` and `payment_status === false`, show a “Pay Now” `<Button>`.
+
+    ```jsx
+    <Button variant="primary" onClick={() => payInfluencer(influencerId)}>
+      {isPaying[influencerId] ? "Paying…" : "Pay ₹{finalRate.toLocaleString()}"}
+    </Button>
+    ```
+  * If `payment_status === true`, show a green badge “Paid.”
+
+* **API routes** (you’ll need a new one):
+
+  1. `GET /api/campaign/{campaignId}/influencers`
+
+     * Already returns `{ id, name, profile_picture_url, invite_status }`. Extend it to also include `deliverables_submitted`, `payment_status`, `performance`.
+     * e.g. `select("influencer_id,status,deliverables_submitted,payment_status,performance")`
+     * Join on `influencer` table to get `name` and `profile_picture_url`.
+
+  2. `POST /api/campaign/{campaignId}/influencers/{influencerId}/pay`
+
+     * Server: update `campaign_influencer.payment_status = TRUE` and record `paid_at = now()`.
+     * (Optionally call out to a real payment gateway.)
+
+* **React‑Query hooks**:
+
+  * `useQuery(["campaignInfluencers", campaignId], fetchCampaignInfluencers)`
+  * `useMutation(payInfluencerMutation, { onSuccess: () => invalidateQueries(["campaignInfluencers", campaignId]) })`
+
+* **UI (ShadCN)**:
+
+  * Show each invited influencer in a `<Card>`
+
+    * Left side: `<Avatar>` + influencer name + status badge (“Completed” or “Pending Deliverables”)
+    * Right side: If `status === "Completed"` and `payment_status === false`: show `<Button variant="destructive">Pay ₹{rate_per_post.toLocaleString()}</Button>`.
+      Else if `payment_status === true`: show `<Badge variant="success">Paid</Badge>`.
+
+---
+
+## Summary of All Screens and Routes
+
+Below is a concise table of “what you need, and where”:
+
+| Step                                                                                   | Screen / Path                                                  | Purpose                                                                                   | API Routes                                                                                                   |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+|  1                                                                                     | `/dashboard/business/creators` (Influencer Search)             | Business browses/searches influencers and clicks “Invite”                                 | • `GET /api/influencer?search={q}`                                                                           |
+|   • `POST /api/campaign/{cid}/invite` (body: `{ influencer_id }`)                      |                                                                |                                                                                           |                                                                                                              |
+|  2                                                                                     | `/dashboard/business/campaigns/{cid}/negotiation/{inflId}`     | A simple chat UI where Business & Influencer exchange offers until rate is settled        | • `GET /api/campaign/{cid}/negotiation/{inflId}`                                                             |
+|   • `POST /api/campaign/{cid}/negotiation/{inflId}` (body: `{ sender_type, message }`) |                                                                |                                                                                           |                                                                                                              |
+|  3                                                                                     | `/dashboard/influencer/campaigns/{cid}` (View & Sign Contract) | Influencer sees the contract PDF and clicks “Sign Contract”                               | • `GET /api/contract/generate?campaign_id={cid}&creator_id={inflId}`                                         |
+|   • `POST /api/campaign/{cid}/influencers/{inflId}/sign`                               |                                                                |                                                                                           |                                                                                                              |
+|  4                                                                                     | `/dashboard/influencer/campaigns/{cid}` (Submit Deliverables)  | Influencer enters URLs for each deliverable, uploads them, and clicks “Mark as Complete”  | • `POST /api/deliverable` (body: `{ campaign_id, influencer_id, deliverable_type, submission_url }`)         |
+|   • `GET /api/campaign/{cid}/influencers/{inflId}/performance`                         |                                                                |                                                                                           |                                                                                                              |
+|  5                                                                                     | `/dashboard/business/campaigns/{cid}` (Business Review & Pay)  | Business sees each influencer’s deliverables, performance, and clicks “Pay” once complete | • `GET /api/campaign/{cid}/influencers` (include `status,deliverables_submitted,payment_status,performance`) |
+|   • `POST /api/campaign/{cid}/influencers/{inflId}/pay`                                |                                                                |                                                                                           |                                                                                                              |
+
+---
+
+## Brief Implementation Checklist
+
+1. **Database**
+
+   * Ensure `campaign_influencer` has JSONB columns:
+
+     ```sql
+     ALTER TABLE public.campaign_influencer
+       ADD COLUMN deliverables_submitted jsonb DEFAULT '{}',
+       ADD COLUMN payment_status boolean DEFAULT false,
+       ADD COLUMN performance jsonb DEFAULT '{}',
+       ADD COLUMN signed_at timestamp with time zone;
+     ```
+   * Create a new `negotiations` table (shown earlier).
+
+2. **Backend Routes / Services**
+
+   * **Invite**: `POST /api/campaign/{cid}/invite` → `invite_influencer_to_campaign(campaignId, influencerId)`.
+   * **Negotiation**:
+
+     * `GET /api/campaign/{cid}/negotiation/{inflId}` → `list_negotiation_messages(campaignId, inflId)`
+     * `POST /api/campaign/{cid}/negotiation/{inflId}` → `add_negotiation_message(...)`.
+   * **Sign Contract**:
+
+     * `GET /api/contract/generate?campaign_id={cid}&creator_id={inflId}` → your PDF endpoint.
+     * `POST /api/campaign/{cid}/influencers/{inflId}/sign` → service that sets `campaign_influencer.status = "Signed"` + `signed_at = now()`.
+   * **Deliverable Submission**:
+
+     * `POST /api/deliverable` → service that updates `campaign_influencer.deliverables_submitted` JSONB.
+   * **Performance**:
+
+     * `GET /api/campaign/{cid}/influencers/{inflId}/performance` → return `campaign_influencer.performance` JSONB.
+   * **Mark Complete**:
+
+     * `POST /api/influencer/{inflId}/campaign/{cid}/complete` → sets `campaign_influencer.status = "Completed"`.
+   * **Business Pays**:
+
+     * `GET /api/campaign/{cid}/influencers` → expand to include (`status, deliverables_submitted, payment_status, performance, rate_per_post`).
+     * `POST /api/campaign/{cid}/influencers/{inflId}/pay` → sets `payment_status = true`.
+
+3. **Frontend Screens + Components**
+
+   * **ShadCN UI** (cards, badges, buttons, inputs) is used throughout.
+   * Wrap every “dashboard” page with a React‑Query `<QueryClientProvider>`.
+   * Use `useQuery` to fetch data and `useMutation` to post invites, negotiation messages, deliverables, sign, mark complete, and pay.
+   * Conditionally enable/disable buttons based on loading/`isPending` flags.
+   * Always guard `performance && <Card>` so you don’t try to render undefined.
+   * For negotiation, format message bubbles in a scrollable `<div>` with flex (left vs. right alignment).
+   * For all cards, show appropriate `<Badge>` for statuses:
+
+     * Pending Invitation → “Pending”
+     * Invitation Accepted → “Accepted”
+     * Contract Signed → “Signed”
+     * Deliverables Completed (but not paid) → “Completed, awaiting payment”
+     * Paid → “Paid”
+
+4. **Styling / Layout**
+
+   * Use a parent container `div.p-8 max-w-4xl mx-auto space-y-8`.
+   * For forms, stack items in a `<Card>` with `<CardHeader>` + `<CardContent>`.
+   * Keep submit buttons to the right of inputs.
+   * Use `<Badge variant="outline">` for statuses, `<Badge variant="success">Paid</Badge>` for completed states, `<Badge variant="destructive">Rejected</Badge>` if you ever need to show a “Rejected” state.
+
+---
+
+### In Summary
+
+1. **Business searches** for influencers → clicks “Invite” (invokes `POST /invite`).
+2. **Negotiation chat** (`GET/POST /negotiation`) until rate is agreed upon.
+3. **Contract generation** (`GET /api/contract/generate`) and **Influencer signs** (`POST /sign`).
+4. **Influencer submits deliverables** (`POST /deliverable`), **System shows performance** (`GET /performance`).
+5. **Business reviews** and clicks “Pay” (`POST /pay`), which sets `payment_status = true`.
+
+Each step corresponds to one (or a pair of) routes, a React‑Query hook, and a ShadCN‐based card or form. By following the outline above, you can assemble the full end‑to‑end workflow in small, testable pieces.
+

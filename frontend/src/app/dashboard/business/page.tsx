@@ -183,7 +183,7 @@ export default function BusinessDashboardPage() {
                 <TableCell>
                   <Button
                     variant="link"
-                    onClick={() => router.push(`/campaigns/${camp.id}`)}
+                    onClick={() => router.push(`/dashboard/business/campaigns`)}
                   >
                     View Details
                   </Button>
